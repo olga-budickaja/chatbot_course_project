@@ -1,0 +1,41 @@
+# Ігнорування файлів середовища Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Віртуальне середовище
+venv/
+env/
+*.egg-info/
+*.egg
+
+# Конфіденційні файли та налаштування
+.env
+*.secret
+config.json
+settings.py
+
+# Логи та кеш
+logs/
+*.log
+debug.log
+*.cache
+*.sqlite3
+
+# Файли IDE та редакторів
+.vscode/
+.idea/
+*.iml
+
+# Пакети та залежності
+Pipfile
+Pipfile.lock
+poetry.lock
+node_modules/
+
+# Компільовані файли Cython та Jupyter Notebook
+*.so
+*.ipynb_checkpoints
+
+# Docker та CI/CD
+docker-compose.override.yml
