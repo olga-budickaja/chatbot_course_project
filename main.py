@@ -31,11 +31,18 @@ btn_plays = KeyboardButton('Ігри 🎮')
 MENU_KEYBOARD.add(btn_films, btn_musics, btn_histories, btn_plays)
 
 ADMIN_KEYBOARD_FILM = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-btn_add_film = KeyboardButton('Створити новий фільм')
+btn_add_film = KeyboardButton('Додати фільм')
 btn_delete_film = KeyboardButton('Видалити фільм')
 btn_view_film = KeyboardButton('Переглянути фільм')
 
 ADMIN_KEYBOARD_FILM.add(btn_add_film, btn_delete_film, btn_view_film)
+
+ADMIN_KEYBOARD_MUSIC = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+btn_add_music = KeyboardButton('Додати музику')
+btn_delete_music = KeyboardButton('Видалити музику')
+btn_view_music = KeyboardButton('Переглянути музику')
+
+ADMIN_KEYBOARD_MUSIC.add(btn_add_music, btn_delete_music, btn_view_music)
 
 users = {}
 
@@ -61,7 +68,7 @@ def admin_panel(message:Message):
     if message.text == 'Фільми 🎥':
         choose_category_admin(message, ADMIN_KEYBOARD_FILM, admin_panel_film)
     elif message.text == 'Музика 🎵':
-        pass
+        choose_category_admin(message, ADMIN_KEYBOARD_MUSIC, admin_panel_music)
     elif message.text == 'Анекдоти 😂':
         pass
     elif message.text == 'Ігри 🎮':
@@ -79,7 +86,7 @@ def choose_category_admin(message:Message, markup, fnk):
     bot.register_next_step_handler(sent_message, fnk)
 
 
-# films
+# FILMS
 def admin_panel_film(message:Message):
     if message.text == 'Створити новий фільм':
         sent_message = bot.send_message(message.chat.id, "Введіть назву фільма: ", reply_markup=ReplyKeyboardRemove())
@@ -144,25 +151,6 @@ def get_new_film_desc(message: Message):
         handle_end_creation(message, 'Фільм', 'Введіть короткий опис', get_new_film_desc)
 
 
-
-# USER PANEL
-def user_panel(message:Message):
-    if message.text == 'Фільми 🎥':
-        if len(data["films"]):
-            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
-            for idx, film in  enumerate(data["films"]):
-                keyboard.add(KeyboardButton(f'{idx + 1}. {film["title"]}'))
-
-            sent_message = bot.send_message(message.chat.id, "Оберіть фільм для перегляду: ", reply_markup=keyboard)
-            bot.register_next_step_handler(sent_message, get_info_film)
-        elif message.text == 'Музика 🎵':
-            pass
-        elif message.text == 'Анекдоти 😂':
-            pass
-        elif message.text == 'Ігри 🎮':
-            pass
-
-
 # get film
 def get_info_film(message: Message):
     id_film = int(message.text.split(".")[0]) - 1
@@ -184,6 +172,108 @@ def remove_film(message: Message):
 
     bot.send_message(message.chat.id, "Фільм успішно видалено.")
     start(message)
+
+
+# MUSICS
+def admin_panel_music(message:Message):
+    if message.text == 'Додати музику':
+        sent_message = bot.send_message(message.chat.id, "Введіть назву треку: ", reply_markup=ReplyKeyboardRemove())
+        bot.register_next_step_handler(sent_message, get_new_music_title)
+    elif message.text == 'Видалити музику':
+        if len(data["musics"]):
+            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for idx, music in  enumerate(data["musics"]):
+                keyboard.add(KeyboardButton(f'{idx + 1}. {music["title"]}'))
+
+            sent_message = bot.send_message(message.chat.id, "Оберіть музику для видалення: ", reply_markup=keyboard)
+            bot.register_next_step_handler(sent_message, remove_music)
+        else:
+            sent_message = bot.send_message(message.chat.id, "В базі даних ще немає музики. Створіть першу: ", reply_markup=ReplyKeyboardRemove())
+            sent_message = bot.send_message(message.chat.id, "Введіть назву музики: ")
+            bot.register_next_step_handler(sent_message, get_new_music_title)
+    elif message.text == 'Переглянути музику':
+        if len(data["musics"]):
+            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for idx, music in  enumerate(data["musics"]):
+                keyboard.add(KeyboardButton(f'{idx + 1}. {music["title"]}'))
+
+            sent_message = bot.send_message(message.chat.id, "Оберіть музику для перегляду: ", reply_markup=keyboard)
+            bot.register_next_step_handler(sent_message, get_info_music)
+        else:
+            sent_message = bot.send_message(message.chat.id, "В базі даних ще немає музики. Створіть першу: ", reply_markup=ReplyKeyboardRemove())
+            sent_message = bot.send_message(message.chat.id, "Введіть назву музики: ")
+            bot.register_next_step_handler(sent_message, get_new_music_title)
+
+
+# create music
+def get_new_music_title(message:Message):
+    title = message.text
+    new_music = {
+        'title': title,
+        'link': '',
+    }
+    data['musics'].append(new_music)
+    save_data()
+    sent_message = bot.send_message(message.chat.id, "Введіть посилання на музику: ")
+
+    bot.register_next_step_handler(sent_message, get_new_music_link)
+
+
+def get_new_music_link(message:Message):
+    data['musics'][-1]['link'] = message.text
+    save_data()
+    sent_message = bot.send_message(message.chat.id, "Музику створено успішно.")
+    start(message)
+
+
+# get music
+def get_info_music(message: Message):
+    id_music = int(message.text.split(".")[0]) - 1
+    music = data["musics"][id_music]
+
+    bot.send_message(message.chat.id, music['title'], reply_markup=ReplyKeyboardRemove())
+
+    bot.send_message(message.chat.id, music['link'])
+    start(message)
+
+
+# remove music
+def remove_music(message: Message):
+    id_film = int(message.text.split(".")[0]) - 1
+    del  data["musics"][id_film]
+
+    bot.send_message(message.chat.id, "Музику успішно видалено.")
+    start(message)
+
+
+# USER PANEL
+def user_panel(message:Message):
+    if message.text == 'Фільми 🎥':
+        if len(data["films"]):
+            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for idx, film in  enumerate(data["films"]):
+                keyboard.add(KeyboardButton(f'{idx + 1}. {film["title"]}'))
+
+            sent_message = bot.send_message(message.chat.id, "Оберіть фільм для перегляду: ", reply_markup=keyboard)
+            bot.register_next_step_handler(sent_message, get_info_film)
+        else:
+            bot.send_message(message.chat.id, "Фільмів, нажаль, немає. 🤷🏽‍♀️")
+            start(message)
+    elif message.text == 'Музика 🎵':
+        if len(data["musics"]):
+            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for idx, music in  enumerate(data["musics"]):
+                keyboard.add(KeyboardButton(f'{idx + 1}. {music["title"]}'))
+
+            sent_message = bot.send_message(message.chat.id, "Оберіть музику для перегляду: ", reply_markup=keyboard)
+            bot.register_next_step_handler(sent_message, get_info_music)
+        else:
+            bot.send_message(message.chat.id, "Музики, нажаль, немає. 🤷🏽‍♀️")
+            start(message)
+    elif message.text == 'Анекдоти 😂':
+        pass
+    elif message.text == 'Ігри 🎮':
+        pass
 
 
 # GENERALY FUNCTIONS
