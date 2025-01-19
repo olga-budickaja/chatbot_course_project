@@ -10,12 +10,13 @@ token = os.getenv("TOKEN_TELEBOT")
 admin = int(os.getenv("ADMIN"))
 bot = telebot.TeleBot(token)
 
+users = {}
 
 try:
     with open('data.json', 'r', encoding='utf-8') as f:
         data = json.load(f)
 except FileNotFoundError:
-    data = {"films": [], "musics": []}
+    data = {"films": [], "musics": [], "joks": []}
 
 
 def save_data():
@@ -25,7 +26,7 @@ def save_data():
 MENU_KEYBOARD = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
 btn_films = KeyboardButton('Фільми 🎥')
 btn_musics = KeyboardButton('Музика 🎵')
-btn_histories = KeyboardButton('Анекдоти 😂')
+btn_histories = KeyboardButton('Приколи 😂')
 btn_plays = KeyboardButton('Ігри 🎮')
 
 MENU_KEYBOARD.add(btn_films, btn_musics, btn_histories, btn_plays)
@@ -44,20 +45,30 @@ btn_view_music = KeyboardButton('Переглянути музику')
 
 ADMIN_KEYBOARD_MUSIC.add(btn_add_music, btn_delete_music, btn_view_music)
 
-users = {}
+ADMIN_KEYBOARD_JOKE = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+btn_add_joke = KeyboardButton('Додати прикол')
+btn_delete_joke = KeyboardButton('Видалити прикол')
+btn_view_joke = KeyboardButton('Переглянути прикол')
+
+ADMIN_KEYBOARD_JOKE.add(btn_add_joke, btn_delete_joke, btn_view_joke)
 
 
 @bot.message_handler(commands=['start'])
 def start(message:Message):
+    user_id = message.from_user.id
     user_name = message.from_user.first_name
 
     if message.chat.id == admin:
         sent_message = bot.send_message(message.chat.id, "Вітаю в адмін панелі", reply_markup=MENU_KEYBOARD)
         bot.register_next_step_handler(sent_message, admin_panel)
     else:
-        sent_message = bot.send_message(message.chat.id, f"🎬 Вітаю, {user_name}! Я розважальний бот 🤖. Розповім тобі про цікаві фільми 🎥, найулюбленіші хіти 🎵, найсмішніші анекдоти 😂 та навіть запропоную пограти 🎮!",
-        reply_markup=MENU_KEYBOARD)
-        sent_message = bot.send_message(message.chat.id, "Оберіть категорію: ")
+        if user_id not in users:
+            users[user_id] = True
+            bot.send_message(message.chat.id, f"🎬 Вітаю, {user_name}! Я розважальний бот 🤖. "
+                                "Розповім тобі про цікаві фільми 🎥, найулюбленіші хіти 🎵, "
+                                "найсмішніші приколи 😂 та навіть запропоную пограти 🎮!",
+                        reply_markup=MENU_KEYBOARD)
+        sent_message = bot.send_message(message.chat.id, "Оберіть категорію: ", reply_markup=MENU_KEYBOARD)
         bot.register_next_step_handler(sent_message, user_panel)
 
 
@@ -69,8 +80,8 @@ def admin_panel(message:Message):
         choose_category_admin(message, ADMIN_KEYBOARD_FILM, admin_panel_film)
     elif message.text == 'Музика 🎵':
         choose_category_admin(message, ADMIN_KEYBOARD_MUSIC, admin_panel_music)
-    elif message.text == 'Анекдоти 😂':
-        pass
+    elif message.text == 'Приколи 😂':
+        choose_category_admin(message, ADMIN_KEYBOARD_JOKE, admin_panel_joke)
     elif message.text == 'Ігри 🎮':
         pass
 
@@ -246,6 +257,73 @@ def remove_music(message: Message):
     start(message)
 
 
+# JOKS
+def admin_panel_joke(message:Message):
+    if message.text == 'Додати прикол':
+        sent_message = bot.send_message(message.chat.id, "Введіть вміст приколу: ", reply_markup=ReplyKeyboardRemove())
+        bot.register_next_step_handler(sent_message, get_new_joke_title)
+    elif message.text == 'Видалити прикол':
+        if len(data["joks"]):
+            keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
+            for idx, joke in  enumerate(data["joks"]):
+                title = f"{idx + 1}. {joke["title"]}"
+                image_url = joke["link"]
+
+                keyboard.add(KeyboardButton(f'{idx + 1}. {joke["title"]}'))
+
+                bot.send_photo(message.chat.id, image_url, caption=title)
+
+            sent_message = bot.send_message(message.chat.id, "Оберіть прикол для видалення: ", reply_markup=keyboard)
+            bot.register_next_step_handler(sent_message, remove_joke)
+        else:
+            sent_message = bot.send_message(message.chat.id, "В базі даних ще немає приколів. Створіть перший: ", reply_markup=ReplyKeyboardRemove())
+            sent_message = bot.send_message(message.chat.id, "Введіть нотатку для приколу: ")
+            bot.register_next_step_handler(sent_message, get_new_joke_title)
+    elif message.text == 'Переглянути прикол':
+        if len(data["joks"]):
+            for idx, joke in enumerate(data["joks"]):
+                title = joke["title"]
+                media_url = joke["link"]
+
+                bot.send_video(message.chat.id, media_url, caption=title)
+
+            start(message)
+        else:
+            sent_message = bot.send_message(message.chat.id, "В базі даних ще немає приколів. Створіть перший: ", reply_markup=ReplyKeyboardRemove())
+            sent_message = bot.send_message(message.chat.id, "Введіть вміст приколу: ")
+            bot.register_next_step_handler(sent_message, get_new_joke_title)
+
+
+# create joke
+def get_new_joke_title(message:Message):
+    title = message.text
+    new_joke = {
+        'title': title,
+        'link': '',
+    }
+    data['joks'].append(new_joke)
+    save_data()
+    sent_message = bot.send_message(message.chat.id, "Введіть посилання на прикол: ")
+
+    bot.register_next_step_handler(sent_message, get_new_joke_link)
+
+
+def get_new_joke_link(message:Message):
+    data['joks'][-1]['link'] = message.text
+    save_data()
+    sent_message = bot.send_message(message.chat.id, "Прикол створено успішно.")
+    start(message)
+
+
+# remove joke
+def remove_joke(message: Message):
+    id_film = int(message.text.split(".")[0]) - 1
+    del  data["joks"][id_film]
+
+    bot.send_message(message.chat.id, "Прикол успішно видалено.")
+    start(message)
+
+
 # USER PANEL
 def user_panel(message:Message):
     if message.text == 'Фільми 🎥':
@@ -270,8 +348,15 @@ def user_panel(message:Message):
         else:
             bot.send_message(message.chat.id, "Музики, нажаль, немає. 🤷🏽‍♀️")
             start(message)
-    elif message.text == 'Анекдоти 😂':
-        pass
+    elif message.text == 'Приколи 😂':
+        if len(data["joks"]):
+            for idx, joke in enumerate(data["joks"]):
+                title = joke["title"]
+                media_url = joke["link"]
+
+                bot.send_video(message.chat.id, media_url, caption=title)
+
+            start(message)
     elif message.text == 'Ігри 🎮':
         pass
 
