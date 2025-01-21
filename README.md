@@ -15,7 +15,7 @@
 <b>1. Clone the repository</b>
   <p>First, clone the repository to your local machine:</p>
   <pre class="notranslate">
-    <code>git clone https://github.com/yourusername/chatbot-repo.git</code>
+    <code>git clone git@github.com:olga-budickaja/chatbot_course_project.git</code>
   </pre>
   <pre class="notranslate">
     <code>cd chatbot-repo</code>
