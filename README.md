@@ -33,8 +33,9 @@
 <b>4. Add your Telegram Bot Token and User ID</b>
   <p>Open the .env file and add the following information:</p>
   <pre class="notranslate">
-    <code>TELEGRAM_TOKEN=your_telegram_bot_token
-      ADMIN_ID=your_telegram_user_id
+    <code>
+TELEGRAM_TOKEN=your_telegram_bot_token
+ADMIN_ID=your_telegram_user_id
     </code>
 	</pre>
 <ul>
