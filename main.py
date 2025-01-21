@@ -368,7 +368,7 @@ def user_panel(message:Message):
         choose_category_admin(message, ADMIN_KEYBOARD_PLAY, play_panel)
 
 
-# PLAYS
+#  PLAYS
 def play_panel(message:Message):
     if message.text == 'Камінь-ножиці-папір 🪨✂️🧻':
         keyboard = ReplyKeyboardMarkup(resize_keyboard=True, one_time_keyboard=True)
