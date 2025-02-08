@@ -432,12 +432,10 @@ def get_play_step(message: Message):
     bot_answers = ["Камінь 🪨", "Ножиці ✂️", "Папір 🧻"]
     keyboard = ["Камінь 🪨", "Ножиці ✂️", "Папір 🧻", "Закінчити"]
 
-    # Випадковий вибір бота без зайвого тексту
     bot_choice = random.choice(bot_answers)
 
     bot.send_message(message.chat.id, f"Моя Відповідь: {bot_choice}")
 
-    # Перевіряємо результат гри
     if user_answer == bot_choice:
         bot.send_message(message.chat.id, "Нічия 🤝")
         handle_and_creation_plays(message, "Оберіть свій хід: ", keyboard)
